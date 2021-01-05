@@ -14,7 +14,7 @@ class UTKFaceDataset(Dataset):
     def __init__(self, data_dir, transforms=None):
         super().__init__()
         self.data_dir = data_dir
-        self.image_paths = glob(data_dir+"/*")
+        self.image_paths = glob(data_dir+"/*")[5000:5050]
         self.transforms = transforms
 
         print("UTKFace dataset")
@@ -96,7 +96,7 @@ class DataModule(pl.LightningDataModule):
         self.train_dataset = self.dataset
 
     def train_dataloader(self):
-        return DataLoader(self.train_dataset, batch_size=2, num_workers=4)
+        return DataLoader(self.train_dataset, batch_size=4, num_workers=4)
 
 
 if __name__ == "__main__":
