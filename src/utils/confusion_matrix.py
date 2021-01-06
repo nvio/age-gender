@@ -27,7 +27,7 @@ def get_confusion_matrix_plot(cm, class_names):
     
     for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
         color = "white" if cm[i, j] > threshold else "black"
-        plt.text(j, i, cm[i, j], horizontalalignment="center", color=color)
+        plt.text(j, i, f"{cm[i, j]:.3f}", horizontalalignment="center", color=color)
         
     plt.tight_layout()
     plt.ylabel('True label')
