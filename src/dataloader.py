@@ -7,6 +7,7 @@ from torch.utils.data.dataloader import DataLoader
 from torch.utils.data.dataset import Dataset, random_split
 import torch
 from torchvision.transforms import Compose, ToTensor, Normalize
+import numpy as np
 
 
 
@@ -14,7 +15,7 @@ class UTKFaceDataset(Dataset):
     def __init__(self, data_dir, transforms=None):
         super().__init__()
         self.data_dir = data_dir
-        self.image_paths = glob(data_dir+"/*")[5000:5050]
+        self.image_paths = glob(data_dir+"/*")
         self.transforms = transforms
 
         print("UTKFace dataset")
@@ -86,20 +87,27 @@ class UTKFaceDataset(Dataset):
 
 
 class DataModule(pl.LightningDataModule):
-    def __init__(self, data_dir):
+    def __init__(self, data_dir, batch_size):
         super().__init__()
         transforms = Compose([ToTensor()])
         self.dataset = UTKFaceDataset(data_dir, transforms)
+        self.batch_size = batch_size
         
 
     def setup(self, stage=None):
-        self.train_dataset = self.dataset
+        self.train, self.val, self.test = random_split(self.dataset, 
+                                                       (np.array([0.7, 0.2, 0.1])*len(self.dataset)).astype(np.uint8),
+                                                       generator=torch.Generator().manual_seed(42))
 
     def train_dataloader(self):
-        return DataLoader(self.train_dataset, batch_size=4, num_workers=4)
+        return DataLoader(self.train, batch_size=self.batch_size, num_workers=4)
 
+    def val_dataloader(self):
+        return DataLoader(self.val, batch_size=self.batch_size, num_workers=4)
+
+    def test_dataloader(self):
+        return DataLoader(self.test, batch_size=self.batch_size, num_workers=4)
 
 if __name__ == "__main__":
     # Examples
     dataset = UTKFaceDataset("..\\data\\UTKFace")
-    dataset[0]
