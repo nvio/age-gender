@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from torch.utils.data.dataloader import DataLoader
 from torch.utils.data.dataset import Dataset, random_split
 import torch
-from torchvision.transforms import Compose, ToTensor, Normalize
+from torchvision.transforms import Compose, ToTensor, RandomHorizontalFlip, RandomAffine, RandomVerticalFlip
 import numpy as np
 
 
@@ -39,9 +39,11 @@ class UTKFaceDataset(Dataset):
         return len(self.image_paths)
 
 
-    def imshow(self, index):
+    def imshow(self, index, apply_transforms=True):
         image_path = self.image_paths[index]
         image = cv.cvtColor(cv.imread(image_path), cv.COLOR_BGR2RGB)
+        if apply_transforms:
+            image = np.array(self.transforms(image).permute(1,2,0))
         age, gender = self.get_age_and_gender(image_path)
         image = cv.putText(image, 
                             text = f"Gender: {'Female' if gender==1 else 'Male'}, Age: {age}",
@@ -89,7 +91,12 @@ class UTKFaceDataset(Dataset):
 class DataModule(pl.LightningDataModule):
     def __init__(self, data_dir, batch_size):
         super().__init__()
-        transforms = Compose([ToTensor()])
+        transforms=Compose([ToTensor(),
+                            RandomHorizontalFlip(),
+                            RandomAffine(degrees=5,
+                                         translate=(0.05, 0.05),
+                                         scale=(1., 1.5))])
+                                         
         self.dataset = UTKFaceDataset(data_dir, transforms)
         self.batch_size = batch_size
         
@@ -110,4 +117,11 @@ class DataModule(pl.LightningDataModule):
 
 if __name__ == "__main__":
     # Examples
-    dataset = UTKFaceDataset("..\\data\\UTKFace")
+    dataset = UTKFaceDataset("..\\data\\UTKFace",
+                            transforms=Compose([ToTensor(), 
+                                                RandomHorizontalFlip(), 
+                                                RandomAffine(degrees=5,
+                                                            translate=(0.05, 0.05),
+                                                            scale=(1., 1.5))]))
+
+    dataset.imshow(0)
