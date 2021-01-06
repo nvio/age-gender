@@ -95,8 +95,11 @@ class DataModule(pl.LightningDataModule):
         
 
     def setup(self, stage=None):
+        train_len = int(0.7*len(self.dataset))
+        val_len = int(0.2*len(self.dataset))
+        test_len = len(self.dataset) - train_len - val_len
         self.train, self.val, self.test = random_split(self.dataset, 
-                                                       (np.array([0.7, 0.2, 0.1])*len(self.dataset)).astype(np.uint8),
+                                                       (train_len, val_len, test_len),
                                                        generator=torch.Generator().manual_seed(42))
 
     def train_dataloader(self):
