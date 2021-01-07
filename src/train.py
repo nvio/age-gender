@@ -1,19 +1,15 @@
 import hydra
-
 import torch
 import torch.nn as nn
-
 from torch.optim import Adam
 import numpy as np
-
 import pytorch_lightning as pl
 from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.metrics.functional.classification import accuracy
+from dataloader import DataModule
 
 from utils.confusion_matrix import confusion_matrix_plot_as_array
-
-from dataloader import DataModule
 from models.agegender_resnet import AgeGenderResNet
 from models.nddr_resnet import NDDR_ResNet18
 
@@ -92,16 +88,27 @@ class MutiTaskNet(pl.LightningModule):
         return np.array(tensor.cpu())
 
 
+@hydra.main(config_path=r".\configs\config.yaml")
+def main(cfg):
+    models = {"AgeGenderResNet": AgeGenderResNet,
+              "NDDR_ResNet18": NDDR_ResNet18}
+              
+    if cfg["model"]["name"] not in models:
+        raise ValueError
 
-if __name__ == "__main__":
+    net = models[cfg["model"]["name"]].create()
+    datamodule = DataModule.from_config(cfg["dataset"])
+
     checkpoint = ModelCheckpoint(monitor='val/loss/total', save_top_k=1, save_last=True)
-    logger = TensorBoardLogger(save_dir=r"..\training", name="AgeGenderResNet")
-    trainer = pl.Trainer(gpus=1,
+    logger = TensorBoardLogger(save_dir=cfg["logger"]["save_dir"], 
+                               name=cfg["model"]["name"])
+
+    trainer = pl.Trainer(gpus=cfg["trainer"]["gpus"],
+                         max_epochs=cfg["trainer"]["max_epochs"],
                          callbacks=[checkpoint],
                          logger=logger)
-
-
-    datamodule = DataModule("..\\data\\UTKFace", batch_size=4, num_workers=4)
-    net = AgeGenderResNet()
     model = MutiTaskNet(net)
     trainer.fit(model, datamodule)
+
+if __name__ == "__main__":
+    main()
