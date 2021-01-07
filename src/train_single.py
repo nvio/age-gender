@@ -50,7 +50,7 @@ class AgeResNet(pl.LightningModule):
         image, age_group, gender = batch
         age_probs = self(image)
         loss = F.nll_loss(torch.log(age_probs), age_group)
-        self.log_dict({f"{stage}/loss": loss})
+        self.log_dict({f"{stage}/los/ages": loss})
         output = {"loss": loss,
                   "age": (age_group, age_probs.argmax(dim=1))
                   }
@@ -113,12 +113,11 @@ class GenderResNet(pl.LightningModule):
         output = self.compute_output(batch, stage="val")
         return output
 
-
     def compute_output(self, batch, stage):
         image, _, gender = batch
         gender_probs = self(image)
         loss = F.nll_loss(torch.log(gender_probs), gender)
-        self.log_dict({f"{stage}/loss": loss})
+        self.log_dict({f"{stage}/loss/gender": loss})
         output = {"loss": loss,
                   "gender": (gender, gender_probs.argmax(dim=1))
                   }
