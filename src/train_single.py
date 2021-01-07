@@ -14,12 +14,12 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 from dataloader import DataModule
 
 class AgeResNet(pl.LightningModule):
-    def __init__(self, backbone="resnet18"):
+    def __init__(self, backbone):
         super().__init__()
-        self.feature_extractor = nn.Sequential(remove_last_layers(resnet18(pretrained=True), 1),
-                                               nn.Flatten()
-        )
-        self.fc_age = nn.Sequential(nn.Linear(512, 7), nn.LeakyReLU(0.2))
+        num_features = list(backbone.modules())[-1].in_features
+        backbone = remove_last_layers(backbone, 1)
+        self.feature_extractor = nn.Sequential(backbone,nn.Flatten())
+        self.fc_age = nn.Sequential(nn.Linear(num_features, 7), nn.LeakyReLU(0.2))
 
     def get_backbone(backbone, pretrained=True):
         if backbone == "resnet18":
@@ -89,12 +89,12 @@ class AgeResNet(pl.LightningModule):
 
 
 class GenderResNet(AgeResNet):
-    def __init__(self):
+    def __init__(self, backbone):
         super().__init__()
-        self.feature_extractor = nn.Sequential(remove_last_layers(resnet18(pretrained=True), 1),
-                                               nn.Flatten()
-        )
-        self.fc_gender = nn.Sequential(nn.Linear(512, 2), nn.LeakyReLU(0.2))
+        num_features = list(backbone.modules())[-1].in_features
+        backbone = remove_last_layers(backbone, 1)
+        self.feature_extractor = nn.Sequential(backbone,nn.Flatten())
+        self.fc_gender = nn.Sequential(nn.Linear(num_features, 2), nn.LeakyReLU(0.2))
 
     def forward(self, x):
         x = self.feature_extractor(x)
@@ -102,7 +102,7 @@ class GenderResNet(AgeResNet):
         return x
 
     def compute_output(self, batch, stage):
-        image, age_group, gender = batch
+        image, _, gender = batch
         gender_probs = self(image)
         loss = F.nll_loss(torch.log(gender_probs), gender)
         self.log_dict({f"{stage}/loss": loss})
@@ -138,7 +138,8 @@ if __name__ == "__main__":
 
 
     datamodule = DataModule("..\\data\\UTKFace", batch_size=4, num_workers=4)
-    model = GenderResNet()
+    backbone = resnet101(pretrained=True)
+    model = GenderResNet(backbone)
     trainer.fit(model, datamodule)
 
 
