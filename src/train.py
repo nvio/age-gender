@@ -1,5 +1,8 @@
+import hydra
+
 import torch
 import torch.nn as nn
+
 from torch.optim import Adam
 import numpy as np
 
@@ -10,11 +13,11 @@ from pytorch_lightning.metrics.functional.classification import accuracy
 
 from utils.confusion_matrix import confusion_matrix_plot_as_array
 
+from dataloader import DataModule
+from models.agegender_resnet import AgeGenderResNet
+from models.nddr_resnet import NDDR_ResNet18
 
-from dataloader import DataModule, UTKFaceDataset
-from models.cnn_agegender import AgeGenderResNet
-
-class Net(pl.LightningModule):
+class MutiTaskNet(pl.LightningModule):
     def __init__(self, net):
         super().__init__()
         self.net = net
@@ -86,21 +89,19 @@ class Net(pl.LightningModule):
 
     @staticmethod
     def tensor_to_array(tensor):
-        return np.array(tensor.cpu(), dtype=np.uint8)
+        return np.array(tensor.cpu())
 
 
 
 if __name__ == "__main__":
-
-
-    checkpoint = ModelCheckpoint(monitor='val/loss/total', save_top_k=1)
+    checkpoint = ModelCheckpoint(monitor='val/loss/total', save_top_k=1, save_last=True)
     logger = TensorBoardLogger(save_dir=r"..\training", name="AgeGenderResNet")
     trainer = pl.Trainer(gpus=1,
                          callbacks=[checkpoint],
                          logger=logger)
 
 
-    datamodule = DataModule("..\\data\\UTKFace", batch_size=4)
+    datamodule = DataModule("..\\data\\UTKFace", batch_size=4, num_workers=4)
     net = AgeGenderResNet()
-    model = Net(net)
+    model = MutiTaskNet(net)
     trainer.fit(model, datamodule)
