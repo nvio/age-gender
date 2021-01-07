@@ -6,13 +6,13 @@ import torch.nn.functional as F
 
 
 class AgeGenderResNet(nn.Module):
-    def __init__(self):
+    def __init__(self, backbone):
         super().__init__()
-        resnet = resnet18(pretrained=True)
-        resnet = remove_last_layers(resnet, 1)
-        self.feature_extractor = nn.Sequential(resnet, nn.Flatten())
-        self.fc_age = nn.Sequential(nn.Linear(512, 7), nn.LeakyReLU(0.2))
-        self.fc_gender = nn.Sequential(nn.Linear(512, 2), nn.LeakyReLU(0.2))
+        num_features = list(backbone.modules())[-1].in_features
+        backbone = remove_last_layers(backbone, 1)
+        self.feature_extractor = nn.Sequential(backbone, nn.Flatten())
+        self.fc_age = nn.Sequential(nn.Linear(num_features, 7), nn.LeakyReLU(0.2))
+        self.fc_gender = nn.Sequential(nn.Linear(num_features, 2), nn.LeakyReLU(0.2))
 
     @classmethod
     def create(cls):
@@ -27,5 +27,6 @@ class AgeGenderResNet(nn.Module):
 
 if __name__ == "__main__":
     batch = torch.zeros((2, 3, 200, 200)).to("cuda")
-    model = AgeGenderResNet().to("cuda")
+    backbone = resnet18(pretrained=True)
+    model = AgeGenderResNet(backbone).to("cuda")
     model(batch)
