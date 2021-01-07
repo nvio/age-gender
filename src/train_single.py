@@ -151,22 +151,6 @@ class GenderResNet(pl.LightningModule):
     def is_time_to_log(self, log_freq=10):
         return self.current_epoch % log_freq == 0
 
-    def log_epoch_results(self, outputs, stage):
-        age_pred = []
-        age_true = []
-        for i, output in enumerate(outputs):
-            age_true.extend(self.tensor_to_array(output["age"][0]))
-            age_pred.extend(self.tensor_to_array(output["age"][1]))
-
-        age_labels = ["0-10", "11-20", "21-30", "31-40", "41-50", "51-60", "60-"]
-        cm_age = confusion_matrix_plot_as_array(age_true, age_pred, age_labels)
-
-        # Tensorboard logs
-        age_accuracy = accuracy(torch.tensor(age_pred).to(self.device), (torch.tensor(age_true).to(self.device))).item()
-
-        tb = self.logger.experiment
-        tb.add_scalar(f"{stage}/Age accuracy", age_accuracy, self.current_epoch)
-        tb.add_image(f"{stage}/Age", cm_age, self.current_epoch, dataformats="HWC")
 
     @staticmethod
     def tensor_to_array(tensor):
@@ -182,7 +166,7 @@ if __name__ == "__main__":
                          logger=logger)
 
 
-    datamodule = DataModule("..\\data\\UTKFace", batch_size=4, num_workers=4)
+    datamodule = DataModule("..\\data\\UTKFace", batch_size=128, num_workers=4)
     backbone = resnet18(pretrained=True)
     model = GenderResNet(backbone)
     trainer.fit(model, datamodule)
