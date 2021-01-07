@@ -1,10 +1,7 @@
 import torch
 import torch.nn as nn
 from torchvision.models.resnet import resnet18, resnet101
-from torchvision.models import vgg16_bn
-
-def remove_last_layers(model, n=2):
-    return nn.Sequential(*(list(model.children())[:-n]))
+from utils.pretrained import remove_last_layers
 
 
 class NDDRLayer(nn.Module):
@@ -27,9 +24,6 @@ class NDDRLayer(nn.Module):
         return x_age, x_gender
         
 
-        
-
-
 class NDDR_ResNet18(nn.Module):
     def __init__(self):
         super().__init__()
@@ -39,15 +33,21 @@ class NDDR_ResNet18(nn.Module):
         self.gender_net = self.get_resnet_modulelist()
         self.fc_age = nn.Sequential(nn.AdaptiveAvgPool2d(output_size=(1, 1)),
                                     nn.Flatten(),
-                                    nn.Linear(512, 7)
+                                    nn.Linear(512, 7),
+                                    nn.LeakyReLU(0.2)
         )
         self.fc_gender = nn.Sequential(nn.AdaptiveAvgPool2d(output_size=(1, 1)),
                                        nn.Flatten(),
-                                       nn.Linear(512, 2)
+                                       nn.Linear(512, 2),
+                                       nn.LeakyReLU(0.2)
         )
 
+    @classmethod
+    def create(cls):
+        return cls()
+
     def get_resnet_modulelist(self):
-        model = remove_last_layers(resnet18(pretrained=True))
+        model = remove_last_layers(resnet18(pretrained=True), 2)
         model = nn.ModuleList([nn.Sequential(*list(model.children())[:4]), *list(model.children())[4:]])
         return model
 
