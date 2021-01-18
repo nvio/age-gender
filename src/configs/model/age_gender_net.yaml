@@ -1,4 +1,5 @@
 model: 
   name: AgeGenderNet
-  backbone: resnet50
   pretrained: True
+  backbone: resnet50
+  multi: True

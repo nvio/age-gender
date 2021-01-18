@@ -1,6 +1,7 @@
 model: 
   name: AgeNet
-  backbone: resnet50
   pretrained: True
+  backbone: resnet50
+  multi: False
 
   

@@ -1,8 +1,7 @@
 model: 
   name: NDDRNet
   pretrained: True
-
-defaults:
-  - backbone: resnet50
+  backbone: resnet50
+  multi: True
 
   
