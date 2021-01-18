@@ -1,5 +1,5 @@
 dataset:
-  name: UKTFace
+  name: UTKFace
   path: D:\projects\ulta\data\UTKFace
   batch: 128
   num_workers: 4
