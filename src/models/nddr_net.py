@@ -45,7 +45,7 @@ class NDDRNet(nn.Module):
 
     @classmethod
     def create(cls, cfg):
-        return cls(**cfg)
+        return cls(cfg.backbone, cfg.pretrained)
 
     def adapt_backbone(self, backbone, pretrained):
         if backbone == "resnet18":
@@ -72,7 +72,7 @@ class NDDRNet(nn.Module):
         return model
 
     @staticmethod
-    def resnet50_as_modulelist(self, pretrained):
+    def resnet50_as_modulelist(pretrained):
         model = remove_last_layers(resnet50(pretrained), 2)
         model = nn.ModuleList([nn.Sequential(*list(model.children())[:4]), *list(model.children())[4:]])
         return model
