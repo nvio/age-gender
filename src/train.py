@@ -1,4 +1,6 @@
 import hydra
+from hydra.utils import instantiate
+
 import torch
 import torch.nn as nn
 from torch.optim import Adam
@@ -10,8 +12,8 @@ from pytorch_lightning.metrics.functional.classification import accuracy
 from dataloader import DataModule
 
 from utils.confusion_matrix import confusion_matrix_plot_as_array
-from models.agegender_resnet import AgeGenderResNet
-from models.nddr_resnet import NDDR_ResNet18
+from models.age_gender_net import AgeGenderNet
+from models.nddr_net import NDDRNet
 
 class MutiTaskNet(pl.LightningModule):
     def __init__(self, net):
@@ -58,15 +60,7 @@ class MutiTaskNet(pl.LightningModule):
         return self.current_epoch % log_freq == 0
 
     def log_epoch_results(self, outputs, stage):
-        age_pred = []
-        age_true = []
-        gender_pred = []
-        gender_true = []
-        for i, output in enumerate(outputs):
-            age_true.extend(self.tensor_to_array(output["age"][0]))
-            age_pred.extend(self.tensor_to_array(output["age"][1]))
-            gender_true.extend(self.tensor_to_array(output["gender"][0]))
-            gender_pred.extend(self.tensor_to_array(output["gender"][1]))
+        age_pred, age_true, gender_pred, gender_true = self.get_epoch_results(outputs)
 
         age_labels = ["0-10", "11-20", "21-30", "31-40", "41-50", "51-60", "60-"]
         cm_age = confusion_matrix_plot_as_array(age_true, age_pred, age_labels)
@@ -82,31 +76,42 @@ class MutiTaskNet(pl.LightningModule):
         tb.add_image(f"{stage}/Age", cm_age, self.current_epoch, dataformats="HWC")
         tb.add_image(f"{stage}/Gender", cm_gender, self.current_epoch, dataformats="HWC")
 
+    def get_epoch_results(self, outputs):
+        age_pred = []
+        age_true = []
+        gender_pred = []
+        gender_true = []
+        for i, output in enumerate(outputs):
+            age_true.extend(self.tensor_to_array(output["age"][0]))
+            age_pred.extend(self.tensor_to_array(output["age"][1]))
+            gender_true.extend(self.tensor_to_array(output["gender"][0]))
+            gender_pred.extend(self.tensor_to_array(output["gender"][1]))
+        return age_pred,age_true,gender_pred,gender_true
 
     @staticmethod
     def tensor_to_array(tensor):
         return np.array(tensor.cpu())
 
 
-@hydra.main(config_path=r".\configs\config.yaml")
+@hydra.main(config_path=r".\configs\train.yaml")
 def main(cfg):
-    models = {"AgeGenderResNet": AgeGenderResNet,
-              "NDDR_ResNet18": NDDR_ResNet18}
+    models = {"AgeGenderNet": AgeGenderNet,
+              "NDDR_ResNet18": NDDRNet}
               
-    if cfg["model"]["name"] not in models:
-        raise ValueError
+    if cfg.model.name not in models:
+        raise ValueError(f"{cfg.model.name} is not a valid model")
 
-    net = models[cfg["model"]["name"]].create()
-    datamodule = DataModule.from_config(cfg["dataset"])
+    datamodule = DataModule.create(cfg.dataset)
 
-    checkpoint = ModelCheckpoint(monitor='val/loss/total', save_top_k=1, save_last=True)
-    logger = TensorBoardLogger(save_dir=cfg["logger"]["save_dir"], 
-                               name=cfg["model"]["name"])
+    checkpoint = ModelCheckpoint(**cfg.checkpoint)
+    logger = TensorBoardLogger(save_dir=cfg.logger.save_dir, 
+                               name=cfg.model.name)
 
-    trainer = pl.Trainer(gpus=cfg["trainer"]["gpus"],
-                         max_epochs=cfg["trainer"]["max_epochs"],
+    trainer = pl.Trainer(**cfg.trainer,
                          callbacks=[checkpoint],
                          logger=logger)
+
+    net = models[cfg.model.name].create(cfg.model)
     model = MutiTaskNet(net)
     trainer.fit(model, datamodule)
 
