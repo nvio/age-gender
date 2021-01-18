@@ -1,6 +1,6 @@
 trainer:
   gpus: 1
-  max_epochs: 1
+  max_epochs: 100
   
 logger:
   save_dir: D:\\projects\\ulta\\training
