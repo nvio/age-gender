@@ -11,9 +11,15 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.metrics.functional.classification import accuracy
 from dataloader import DataModule
 
+
 from utils.confusion_matrix import confusion_matrix_plot_as_array
 from models.age_gender_net import AgeGenderNet
 from models.nddr_net import NDDRNet
+from models.age_net import AgeNet
+from models.gender_net import GenderNet
+
+import warnings
+warnings.simplefilter("ignore")
 
 class MutiTaskNet(pl.LightningModule):
     def __init__(self, net):
@@ -96,7 +102,9 @@ class MutiTaskNet(pl.LightningModule):
 @hydra.main(config_path=r".\configs\train.yaml")
 def main(cfg):
     models = {"AgeGenderNet": AgeGenderNet,
-              "NDDR_ResNet18": NDDRNet}
+              "NDDRNet": NDDRNet,
+              "AgeNet": AgeNet,
+              "GenderNet": GenderNet}
               
     if cfg.model.name not in models:
         raise ValueError(f"{cfg.model.name} is not a valid model")
@@ -105,14 +113,17 @@ def main(cfg):
 
     checkpoint = ModelCheckpoint(**cfg.checkpoint)
     logger = TensorBoardLogger(save_dir=cfg.logger.save_dir, 
-                               name=cfg.model.name)
+                               name=f"{cfg.model.name}_{cfg.model.backbone}")
 
     trainer = pl.Trainer(**cfg.trainer,
                          callbacks=[checkpoint],
                          logger=logger)
 
     net = models[cfg.model.name].create(cfg.model)
-    model = MutiTaskNet(net)
+    if cfg.model.multi:
+        model = MutiTaskNet(net)
+    else:
+        model = net
     trainer.fit(model, datamodule)
 
 if __name__ == "__main__":
