@@ -1,6 +1,6 @@
 import os
-import cv2 as cv
 import numpy as np
+import cv2 as cv
 from glob import glob
 import matplotlib.pyplot as plt
 
@@ -10,7 +10,6 @@ from torch.utils.data.dataloader import DataLoader
 
 from torch.utils.data.dataset import Dataset, random_split
 from torchvision.transforms import Compose, ToTensor, RandomHorizontalFlip, RandomAffine
-
 
 
 class UTKFaceDataset(Dataset):
