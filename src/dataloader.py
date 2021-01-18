@@ -133,7 +133,7 @@ class DataModule(pl.LightningDataModule):
         self.num_workers = num_workers
 
     @classmethod
-    def from_config(cls, config):
+    def create(cls, config):
         data_dir = config["path"]
         batch_size = config["batch"]
         num_workers = config["num_workers"]
