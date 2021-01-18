@@ -1,3 +1,5 @@
 dataset:
   name: Wiki
   path: D:\projects\ulta\data\wiki
+  batch: 128
+  num_workers: 4

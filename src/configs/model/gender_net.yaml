@@ -1,0 +1,6 @@
+model: 
+  name: GenderNet
+  backbone: resnet50
+  pretrained: True
+
+  
