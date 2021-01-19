@@ -79,7 +79,7 @@ class GenderNet(pl.LightningModule):
         gender_accuracy = accuracy(torch.tensor(gender_pred).to(self.device), (torch.tensor(gender_true).to(self.device))).item()
 
         tb = self.logger.experiment
-        tb.add_scalar(f"{stage}/Gender accuracy", gender_accuracy, self.current_epoch)
+        self.log(f"{stage}/Gender accuracy", gender_accuracy)
         tb.add_image(f"{stage}/Gender", cm_gender, self.current_epoch, dataformats="HWC")
 
     def training_epoch_end(self, outputs):

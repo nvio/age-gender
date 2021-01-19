@@ -92,7 +92,7 @@ class AgeNet(pl.LightningModule):
         age_accuracy = accuracy(torch.tensor(age_pred).to(self.device), (torch.tensor(age_true).to(self.device))).item()
 
         tb = self.logger.experiment
-        tb.add_scalar(f"{stage}/Age accuracy", age_accuracy, self.current_epoch)
+        self.log(f"{stage}/Age accuracy", age_accuracy)
         tb.add_image(f"{stage}/Age", cm_age, self.current_epoch, dataformats="HWC")
 
     @staticmethod
