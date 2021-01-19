@@ -4,4 +4,6 @@ model:
   backbone: resnet50
   multi: False
 
+checkpoint:
+  monitor: val/Gender accuracy
   
